@@ -1,0 +1,14 @@
+{
+  "created": "2026-11-09",
+  "asset": "public/save-the-shell-flyer-v1.png",
+  "generation": "OpenAI built-in image_gen",
+  "prompt": "Use case: ads-marketing. Create one finished premium website game flyer for Y'all Games' SAVE THE SHELL, a Windows PC / Steam-only turtle rescue game that is COMING SOON. Reference image 1: our original project-generated green sea turtle, use its recognizable olive-and-gold shell and approachable natural eyes as subject guidance. Reference image 2: our original project-generated underwater reef, use its clear turquoise water, soft sun shafts and realistic coral as environmental guidance. These are supporting artwork references, not a request to change any game asset. Wide landscape promotional key art with cinematic polish, beautiful large turtle swimming in shallow sunlit ocean, believable detailed shell and flippers, some small natural barnacles on one section of shell to imply rescue/cleaning, inviting and peaceful. Similar warm premium realism to Endless Bay art while visually presenting a separate fuller rescue game. Compose turtle left/center, clear readable elegant title in the right half, dark teal depth behind lettering, warm ivory and muted gold typography consistent with a Louisiana studio's sophisticated website. Exact text only: 'Y’ALL GAMES' small at top, 'SAVE THE SHELL' large dominant title, 'A turtle rescue adventure' underneath, 'WINDOWS PC · STEAM ONLY' as platform line, 'COMING SOON' as release status. No price, dollar signs, release date, store URL, buy/wishlist button, review quotes, Steam logo, mobile phone, Google Play/Android/iOS symbols, hospital, humans, extra brands, borders or mockup device. Do not claim this is an actual gameplay screenshot. Keep every text line fully inside a generous 6% safe area. The artwork should itself be the complete flyer, not a screenshot of a webpage.",
+  "referenceImages": [
+    "Endless Bay original green-turtle-v1.png",
+    "Endless Bay original reef-v1.png"
+  ],
+  "thirdPartyReferenceImages": [],
+  "approval": "Owner explicitly approved this flyer: 'yes sue that love it'",
+  "scope": "Website promotional art only; no game assets or gameplay changed.",
+  "rights": "Project-generated output, using project's own generated reference artwork. OpenAI output terms; no exclusive-copyright guarantee."
+}
