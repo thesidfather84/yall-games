@@ -32,7 +32,7 @@ function sessionValid(request, key) {
 function redirect(value, maxAge) {
   return new Response(null, {
     status: 303,
-    headers: {...headers, Location: "/testing", "Set-Cookie": cookieName + "=" + value + "; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=" + maxAge}
+    headers: {...headers, Location: maxAge ? "/testing?session=check" : "/testing", "Set-Cookie": cookieName + "=" + value + "; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=" + maxAge}
   });
 }
 function locked(message = "", status = 200) {
@@ -48,7 +48,7 @@ a{color:var(--gold)}.error{margin-top:8px;color:var(--gold)}
 </style></head><body><main><a class="kicker" href="/">Y’ALL GAMES / TESTING</a><h1>Flux Frenzy</h1>
 <p>Enter the testing passcode to open the QA tracker.</p>
 <form action="/testing" method="post"><label for="passcode">Testing passcode</label>
-<input id="passcode" name="passcode" type="password" inputmode="numeric" autocomplete="current-password" pattern="[0-9]{6}" maxlength="6" required>
+<input id="passcode" name="passcode" type="password" inputmode="numeric" autocomplete="off" enterkeyhint="go" maxlength="24" required>
 ${message ? '<p class="error" role="alert">'+message+'</p>' : ""}<button type="submit">Unlock tracker</button></form></main></body></html>`, {status, headers});
 }
 
@@ -76,20 +76,22 @@ export default {
     if (!passcode || !key) return new Response("Tracker temporarily unavailable.", {status: 503, headers});
     if (request.method === "GET" || request.method === "HEAD") {
       if (request.method === "HEAD") return new Response(null, {headers});
-      return sessionValid(request, key) ? new Response(tracker, {headers}) : locked();
+      if (sessionValid(request, key)) return new Response(tracker, {headers});
+      const check = new URL(request.url).searchParams.get("session") === "check";
+      return check ? locked("Your browser did not save the testing session. Allow cookies for yallgames.com and try again.") : locked();
     }
     if (request.method !== "POST") return new Response(null, {status: 405, headers: {...headers, Allow: "GET, HEAD, POST"}});
     const origin = request.headers.get("origin");
-    if (origin && origin !== new URL(request.url).origin) return new Response(null, {status: 403, headers});
+    if (origin && origin !== new URL(request.url).origin) return locked("Open Testing from the Y’all Games homepage and try again.", 403);
     if (!request.headers.get("content-type")?.startsWith("application/x-www-form-urlencoded")) {
       return new Response(null, {status: 415, headers});
     }
     const length = Number(request.headers.get("content-length"));
-    if (!length || length > 512) return new Response(null, {status: 400, headers});
+    if (!length || length > 512) return locked("The passcode was not received. Reopen Testing and try again.", 400);
     const form = new URLSearchParams(await request.text());
     if (form.get("action") === "lock") return redirect("", 0);
     if (!attemptAllowed(request)) return locked("Too many attempts. Try again in 15 minutes.", 429);
-    const value = form.get("passcode") ?? "";
+    const value = (form.get("passcode") ?? "").trim();
     if (!/^\d{6}$/.test(value) || !equal(value, passcode)) return locked("Incorrect passcode.", 401);
     const expiry = Math.floor(Date.now() / 1000) + sessionLength;
     const token = expiry + "." + randomBytes(16).toString("hex");
