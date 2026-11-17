@@ -15,3 +15,8 @@
 .shell .flag{display:none}
 
 @media(max-width:540px){.bar nav{justify-content:flex-end;flex-wrap:wrap;column-gap:11px;row-gap:0}.bar nav a{padding-block:5px}}
+
+.game.rail{border-color:#80633e;background:linear-gradient(155deg,#28241a,#111a1b 65%)}
+.rail-detail figure{margin:0}
+.rail-detail figure img{width:100%;border:1px solid var(--edge);border-radius:14px}
+.rail-detail figcaption{margin-top:5px;color:var(--muted);font-size:12px;text-align:right}
