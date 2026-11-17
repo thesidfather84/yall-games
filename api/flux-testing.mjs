@@ -29,11 +29,29 @@ function sessionValid(request, key) {
   const [expiry, nonce, signature] = value.split(".");
   return Number(expiry) > Math.floor(Date.now() / 1000) && equal(signature, sign(expiry + "." + nonce, key));
 }
-function redirect(value, maxAge) {
-  return new Response(null, {
-    status: 303,
-    headers: {...headers, Location: maxAge ? "/testing?session=check" : "/testing", "Set-Cookie": cookieName + "=" + value + "; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=" + maxAge}
-  });
+function sessionCookie(value, maxAge) {
+  return cookieName + "=" + value + "; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=" + maxAge;
+}
+async function readForm(request) {
+  if (!request.body) return null;
+  const reader = request.body.getReader();
+  const text = new TextDecoder();
+  let bytes = 0;
+  let body = "";
+  try {
+    while (true) {
+      const {value, done} = await reader.read();
+      if (done) return new URLSearchParams(body + text.decode());
+      bytes += value.byteLength;
+      if (bytes > 512) {
+        await reader.cancel();
+        return null;
+      }
+      body += text.decode(value, {stream: true});
+    }
+  } finally {
+    reader.releaseLock();
+  }
 }
 function locked(message = "", status = 200) {
   return new Response(`<!doctype html><html lang="en"><head><meta charset="utf-8">
@@ -54,8 +72,7 @@ ${message ? '<p class="error" role="alert">'+message+'</p>' : ""}<button type="s
 
 const attempts = new Map();
 const windowMs = 15 * 60 * 1000;
-function attemptAllowed(request) {
-  const ip = request.headers.get("x-vercel-forwarded-for") ?? "unknown";
+function attemptAllowed(ip) {
   const now = Date.now();
   if (attempts.size >= 2000) {
     for (const [key, value] of attempts) if (value.until <= now) attempts.delete(key);
@@ -77,8 +94,7 @@ export default {
     if (request.method === "GET" || request.method === "HEAD") {
       if (request.method === "HEAD") return new Response(null, {headers});
       if (sessionValid(request, key)) return new Response(tracker, {headers});
-      const check = new URL(request.url).searchParams.get("session") === "check";
-      return check ? locked("Your browser did not save the testing session. Allow cookies for yallgames.com and try again.") : locked();
+      return locked();
     }
     if (request.method !== "POST") return new Response(null, {status: 405, headers: {...headers, Allow: "GET, HEAD, POST"}});
     const origin = request.headers.get("origin");
@@ -86,15 +102,19 @@ export default {
     if (!request.headers.get("content-type")?.startsWith("application/x-www-form-urlencoded")) {
       return new Response(null, {status: 415, headers});
     }
-    const length = Number(request.headers.get("content-length"));
-    if (!length || length > 512) return locked("The passcode was not received. Reopen Testing and try again.", 400);
-    const form = new URLSearchParams(await request.text());
-    if (form.get("action") === "lock") return redirect("", 0);
-    if (!attemptAllowed(request)) return locked("Too many attempts. Try again in 15 minutes.", 429);
+    const form = await readForm(request);
+    if (!form) return locked("The passcode was not received. Reopen Testing and try again.", 400);
+    if (form.get("action") === "lock") {
+      return new Response(null, {status: 303, headers: {...headers, Location: "/testing", "Set-Cookie": sessionCookie("", 0)}});
+    }
+    const ip = request.headers.get("x-vercel-forwarded-for") ?? "unknown";
+    if (!attemptAllowed(ip)) return locked("Too many attempts. Try again in 15 minutes.", 429);
     const value = (form.get("passcode") ?? "").trim();
     if (!/^\d{6}$/.test(value) || !equal(value, passcode)) return locked("Incorrect passcode.", 401);
     const expiry = Math.floor(Date.now() / 1000) + sessionLength;
     const token = expiry + "." + randomBytes(16).toString("hex");
-    return redirect(token + "." + sign(token, key), sessionLength);
+    attempts.delete(ip);
+    const cookie = sessionCookie(token + "." + sign(token, key), sessionLength);
+    return new Response(tracker, {headers: {...headers, "Set-Cookie": cookie}});
   }
 };
