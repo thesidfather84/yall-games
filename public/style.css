@@ -13,3 +13,5 @@
 .shell .game-art img{padding:0;max-height:none;aspect-ratio:1672/941;object-fit:contain}.steam-detail{grid-template-columns:1fr;gap:24px}.steam-detail>div:first-child{max-width:800px}.steam-flyer img{width:100%;border-radius:14px;border:1px solid var(--edge)}
 
 .shell .flag{display:none}
+
+@media(max-width:540px){.bar nav{justify-content:flex-end;flex-wrap:wrap;column-gap:11px;row-gap:0}.bar nav a{padding-block:5px}}
